@@ -5,6 +5,12 @@ import numpy as np
 import seaborn as sns
 from PIL import Image
 
+from sklearn import linear_model
+
+
+
+
+
 st.set_page_config(layout='wide', page_title='Startup Analysis')
 df = pd.read_excel('startup_cleaned.xlsx')
 # df=pd.read_csv('startup_cleaned.csv',encoding='latin-1')
@@ -16,7 +22,67 @@ df['year'] = df['date'].dt.year
 colors = ["#E78CAE", "#926580", "#926580", "#707EA0", "#34495E"]
 custom_palette = sns.color_palette(colors)
 
+def predict():
+    st.header("Prediction Model")
+    def read_data(csv_file):
+       csv_df2 = pd.read_csv(csv_file)
+       return csv_df2
+
+
+    def split_data(csv_df2):
+       input = csv_df2.iloc[:, :-1]
+       output = csv_df2.iloc[:, -1]
+       x = input.values
+       y = output.values.reshape((-1, 1))
+       return x, y
+
+
+    def find_optimize(input, outcome):
+       w = np.dot(np.linalg.pinv(np.dot(input.T, input)), np.dot(input.T, outcome))
+       return w
+
+
+    def optimize_with_sklearn(input, outcome):
+        regr = linear_model.LinearRegression(fit_intercept=False) 
+        regr.fit(input, outcome)
+        return regr.coef_
+
+
+    def get_loss_value(input, outcome, w):
+        cost = 0
+        y_hat = np.dot(input, w)
+        for x, y in zip(outcome, y_hat):
+           print('Outcome:', x[0], 'Predict:', y[0])
+           cost += pow(x[0] - y[0], 2)
+           return cost / 2
+
+
+    def predict_new_data(input, w):
+       one = np.ones((input.shape[0], 1))
+       input = np.concatenate((one, input), axis=1)
+       return np.dot(input, w)
+
+
+    if __name__ == '__main__':
+       df2 = pd.read_excel('start.xlsx')
+       st.write(df2)
+       a=["Ola","BYJU'S","Zomato","CRED","PayTM",
+        "Physics Wallah","PhonePe"]
+       import random
+       input, outcome = split_data(df2)
+       one = np.ones((input.shape[0], 1))
+       input = np.concatenate((one, input), axis=1)
+       company=a[random.choice(range(0,7))]
+       st.write("You can invest in:")
+       st.write(company)
+
+
 def visualize():
+    
+
+
+
+
     col1,  = st.columns(1)
     with col1:
         st.header('Top 10 Startups by CAGR')
@@ -311,9 +377,11 @@ def load_startup_details(startup):
 
 st.sidebar.title('Startup Funding Analysis')
 
-option = st.sidebar.selectbox('Select One', ['Visualization','Overall Analysis', 'Startup', 'Investor'])
+option = st.sidebar.selectbox('Select One',[ 'Visualization','Overall Analysis', 'Startup', 'Investor','Prediction'])
 
-if option=='Visualization':
+if option=='Prediction':
+    predict()
+elif option=='Visualization':
     visualize()
 
 elif option == 'Overall Analysis':
